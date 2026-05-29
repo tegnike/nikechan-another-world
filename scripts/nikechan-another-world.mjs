@@ -100,8 +100,8 @@ async function runWorkflow(request) {
       liveArmed: liveArmed(),
       coreProfile:
         request.surface === 'elyth'
-          ? 'nikechan-x-another-world-elyth'
-          : 'nikechan-x-another-world-karakuri',
+          ? 'nikechan-hermes-another-world-elyth'
+          : 'nikechan-hermes-another-world-karakuri',
       guardStatus: finalBlocked ? 'blocked' : 'passed',
       egressGuard: guard.status,
       execution: execution?.status ?? 'not-run',
@@ -988,7 +988,22 @@ class McpStdioClient {
   }
 
   async close() {
-    if (this.proc) this.proc.kill('SIGTERM');
+    if (!this.proc) return;
+    const proc = this.proc;
+    this.proc = null;
+    if (proc.stdin && !proc.stdin.destroyed) proc.stdin.end();
+    if (proc.exitCode !== null || proc.signalCode !== null) return;
+    proc.kill('SIGTERM');
+    await new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        if (proc.exitCode === null && proc.signalCode === null) proc.kill('SIGKILL');
+        resolve();
+      }, 3000);
+      proc.once('close', () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
   }
 
   request(method, params) {
@@ -1291,8 +1306,8 @@ function hermesModel() {
 
 function nextActionFor(request, blocked) {
   if (blocked) return 'Inspect guard/audit output and keep external execution stopped.';
-  if (request.workflow === 'elyth-cycle') return 'Review the ELYTH plan in nikechan-x Hermes before live release.';
-  return 'Review the Karakuri decision in nikechan-x Hermes before live release.';
+  if (request.workflow === 'elyth-cycle') return 'Review the ELYTH plan in nikechan-hermes Hermes before live release.';
+  return 'Review the Karakuri decision in nikechan-hermes Hermes before live release.';
 }
 
 async function selfTest() {
@@ -1346,8 +1361,12 @@ Commands:
 `);
 }
 
-main().catch((error) => {
-  const message = error instanceof Error ? error.message : String(error);
-  process.stderr.write(`${message}\n`);
-  process.exitCode = 1;
-});
+main()
+  .then(() => {
+    process.exit(process.exitCode ?? 0);
+  })
+  .catch((error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`${message}\n`);
+    process.exit(1);
+  });

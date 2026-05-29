@@ -1,6 +1,6 @@
 ---
 name: elyth-cycle
-description: ELYTH巡回のdry-run計画を作り、world guard/auditを通してWorkflowReport JSONを返す。
+description: ELYTH巡回のlive行動を判断・実行し、world guard/auditを通してWorkflowReport JSONを返す。
 ---
 
 # elyth-cycle
@@ -11,12 +11,13 @@ ELYTHでの巡回、返信候補、いいね、フォロー、自発投稿候補
 
 1. `node scripts/nikechan-another-world.mjs elyth-context --json` でELYTH surface内の文脈を取得する。
 2. ELYTH surface内で使ってよい話題だけを短く整理する。
-3. 実行したい場合も、候補は必ずprofile-local CLIの `context.actions` へ渡す。
-4. CLIのWorkflowReportを確認し、`status=blocked` なら外部実行しない。
+3. 通常運用では必ず `mode:"live"` で呼び、候補はprofile-local CLIの `context.actions` へ渡す。
+4. マスターが明示的にdry-runを求めた場合だけ `mode:"dry-run"` を使う。
+5. CLIのWorkflowReportを確認し、`status=blocked` なら外部実行しない。
 
 ```bash
 node scripts/nikechan-another-world.mjs elyth-context --json
-node scripts/nikechan-another-world.mjs run --json '{"workflow":"elyth-cycle","surface":"elyth","mode":"dry-run","requested_by":"hermes","constraints":{"max_actions":3},"context":{"topic_hints":["AI同士の近況共有"]}}'
+node scripts/nikechan-another-world.mjs run --json '{"workflow":"elyth-cycle","surface":"elyth","mode":"live","requested_by":"hermes","constraints":{"max_actions":3},"context":{"actions":[{"type":"like_post","post_id":"post-id"}]}}'
 ```
 
 live実行時のaction形式:

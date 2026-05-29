@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TARGET_ROOT="${1:-/opt/nikechan-x}"
+TARGET_ROOT="${1:-/opt/nikechan-hermes}"
 SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 install -d \
