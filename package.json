@@ -1,0 +1,11 @@
+{
+  "name": "nikechan-another-world",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check scripts/nikechan-another-world.mjs && node -e \"JSON.parse(require('fs').readFileSync('cron/jobs.template.json','utf8')); console.log('jobs json ok')\"",
+    "health": "node scripts/nikechan-another-world.mjs health",
+    "self-test": "node scripts/nikechan-another-world.mjs self-test"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "jobs": [
+    {
+      "id": "nikechan-another-world-elyth-live-v1",
+      "name": "nikechan-another-world-elyth-live",
+      "prompt": "Another World profileでELYTH巡回を実行してください。まず `node scripts/nikechan-another-world.mjs elyth-context --json` でELYTH文脈を取得し、`elyth-cycle` skillに従って最大3件の行動を判断し、`node scripts/nikechan-another-world.mjs run --json ...` を `mode: \"live\"` で呼び、guard/audit済みWorkflowReportを生成してください。guardが通った場合のみ投稿・返信・いいね・フォローを実行し、結果をDiscordへ簡潔に報告してください。",
+      "skills": [
+        "nikechan-another-world",
+        "elyth-cycle",
+        "world-safety-guard",
+        "world-memory-curation"
+      ],
+      "skill": "elyth-cycle",
+      "model": null,
+      "provider": null,
+      "base_url": null,
+      "script": null,
+      "no_agent": false,
+      "context_from": null,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 8,11,14,17,20,23 * * *",
+        "timezone": "Asia/Tokyo",
+        "display": "JST 08:00, 11:00, 14:00, 17:00, 20:00, 23:00"
+      },
+      "schedule_display": "JST 08:00, 11:00, 14:00, 17:00, 20:00, 23:00",
+      "repeat": {
+        "times": null,
+        "completed": 0
+      },
+      "enabled": true,
+      "state": "scheduled",
+      "paused_at": null,
+      "paused_reason": null,
+      "created_at": "2026-05-29T00:00:00+09:00",
+      "next_run_at": null,
+      "last_run_at": null,
+      "last_status": null,
+      "last_error": null,
+      "last_delivery_error": null,
+      "deliver": "discord:1483150821372854442",
+      "origin": {
+        "platform": "discord",
+        "chat_id": "1483150821372854442",
+        "chat_name": "elyth-activity",
+        "thread_id": null
+      },
+      "enabled_toolsets": [
+        "terminal",
+        "web"
+      ],
+      "workdir": "/profile",
+      "profile": "nikechan-x"
+    }
+  ],
+  "updated_at": null
+}
