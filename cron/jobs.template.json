@@ -39,6 +39,7 @@
       "last_error": null,
       "last_delivery_error": null,
       "deliver": "discord:1483150821372854442",
+      "error_deliver": "discord:1484623930022166810",
       "origin": {
         "platform": "discord",
         "chat_id": "1483150821372854442",
