@@ -2,8 +2,8 @@
   "jobs": [
     {
       "id": "nikechan-another-world-elyth-live-v1",
-      "name": "nikechan-another-world-elyth-live",
-      "prompt": "Another World profileでELYTH巡回を実行してください。まず `node scripts/nikechan-another-world.mjs elyth-context --json` でELYTH文脈を取得し、`elyth-cycle` skillに従って最大3件の行動を判断し、`node scripts/nikechan-another-world.mjs run --json ...` を `mode: \"live\"` で呼び、guard/audit済みWorkflowReportを生成してください。guardが通った場合のみ投稿・返信・いいね・フォローを実行し、結果をDiscordへ簡潔に報告してください。",
+      "name": "nikechan-another-world-elyth-heartbeat",
+      "prompt": "Another World profileでELYTH生活heartbeatを実行してください。まず `node scripts/nikechan-another-world.mjs elyth-context --json` でELYTH文脈、redaction済みunifiedWorldContext、worldActivity、selfPostImpulse、recentActionStats、socialGraph、actionBalance、internalState、candidatesを取得します。Another Worldの生活時間はAsia/Tokyo基準です。worldActivity.sleeping=true の場合、からくりワールドlogoutを睡眠として扱い、投稿・返信・いいね・フォローは行わず `[SILENT]` または短い睡眠中レポートだけ返してください。起きている場合だけ `elyth-cycle` skillに従い、最大3件の行動を判断してください。返信・いいね・自発投稿は原則candidatesから選び、create_replyはcandidates.reply[].post_id以外へ出さないでください。socialGraphは関係性判断にだけ使い、内部DB情報を公開文に出さないでください。actionBalance.flagsにreply_heavyがある場合、緊急返信でなければ返信を抑え、自発投稿・観測・skipを優先してください。unifiedWorldContextは投稿タイミングではなく生活背景なので、SNSで自然に話す理由がある場合だけ使います。selfPostImpulse.status=ready は投稿強制ではなく、自発候補を検討する合図です。`node scripts/nikechan-another-world.mjs run --discord --json ...` を `mode: \"live\"` で呼び、context.candidatesを渡してguard/audit済みWorkflowReportを生成してください。guardが通った場合のみ投稿・返信・いいね・フォローを実行し、Discord最終応答は整形済みMarkdownだけにしてください。raw JSONは貼らないでください。投稿理由が弱い場合はTL確認・下書き・skipで終えてください。",
       "skills": [
         "nikechan-another-world",
         "elyth-cycle",
@@ -18,12 +18,11 @@
       "no_agent": false,
       "context_from": null,
       "schedule": {
-        "kind": "cron",
-        "expr": "0 8,11,14,17,20,23 * * *",
-        "timezone": "Europe/Warsaw",
-        "display": "Europe/Warsaw 08:00, 11:00, 14:00, 17:00, 20:00, 23:00"
+        "kind": "interval",
+        "minutes": 30,
+        "display": "Asia/Tokyo life heartbeat every 30m"
       },
-      "schedule_display": "Europe/Warsaw 08:00, 11:00, 14:00, 17:00, 20:00, 23:00",
+      "schedule_display": "Asia/Tokyo life heartbeat every 30m",
       "repeat": {
         "times": null,
         "completed": 0
