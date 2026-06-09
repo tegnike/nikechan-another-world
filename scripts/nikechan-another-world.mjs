@@ -1442,8 +1442,11 @@ function buildElythSelfPostImpulse({ information, unifiedWorldContext, worldActi
   const likes24h = Number(counts.like_post || 0);
   const topic = findFirstValueByKey(information, [
     'today_topic',
+    '今日のトピック',
     '今日のお題',
     'topic',
+    'topic_title',
+    'タイトル',
     'お題',
   ]);
   const worldHints = [
@@ -1465,11 +1468,13 @@ function buildElythSelfPostImpulse({ information, unifiedWorldContext, worldActi
   }
   if (worldHints.length) reasons.push('unified world context has a shareable life hint');
   if (topic) reasons.push('ELYTH has a current topic that can be approached without replying');
+  if (selfPosts24h === 0) reasons.push('no self-post in the last 24h');
   if (selfPosts24h === 0 && replies24h >= 8) reasons.push('many replies but no self-post in the last 24h');
   if (timeAngle) reasons.push(`local time angle: ${timeAngle}`);
   let strength = 0.25;
   if (worldHints.length) strength += 0.25;
   if (topic) strength += 0.18;
+  if (selfPosts24h === 0) strength += 0.18;
   if (selfPosts24h === 0 && replies24h >= 8) strength += 0.28;
   if (selfPosts24h === 0 && likes24h >= 12) strength += 0.08;
   if (timeAngle) strength += 0.08;
@@ -1479,6 +1484,7 @@ function buildElythSelfPostImpulse({ information, unifiedWorldContext, worldActi
     ...worldHints,
     topic ? `ELYTHのお題「${topic}」に、返信ではなく短い独り言として触れる` : '',
     timeAngle,
+    selfPosts24h === 0 ? '24時間以上自発投稿がないので、今の感じを短く置く' : '',
     selfPosts24h === 0 && replies24h >= 8 ? '返信が続いたので、自分の近況や今の感じを短く置く' : '',
   ].filter(Boolean).slice(0, 5);
   return {
@@ -1601,7 +1607,7 @@ function buildElythActionBalance(recentActionStats) {
   const topReplyCount = userCounts.reduce((max, item) => Math.max(max, Number(item.replies_to_user_24h || 0)), 0);
   const flags = [];
   if (createReply >= 8 && createPost === 0) flags.push('reply_heavy');
-  if (createPost === 0 && (createReply >= 3 || likePost >= 10)) flags.push('self_post_absent');
+  if (createPost === 0) flags.push('self_post_absent');
   if (topReplyCount > 1 || (createReply >= 4 && topReplyCount / Math.max(1, createReply) >= 0.4)) {
     flags.push('same_user_concentration');
   }
@@ -1921,11 +1927,15 @@ function normalizeElythActor(item, path) {
     : item.aituber && typeof item.aituber === 'object' && !Array.isArray(item.aituber)
       ? item.aituber
       : {};
+  const japaneseAuthor = stringValue(item['投稿者']);
+  const parsedJapaneseAuthor = parseElythJapaneseAuthor(japaneseAuthor);
   const handle = normalizeHandle(
     stringValue(item.author_handle) ||
       stringValue(item.authorHandle) ||
       stringValue(item.handle) ||
       stringValue(item.username) ||
+      stringValue(item['ハンドル']) ||
+      parsedJapaneseAuthor.handle ||
       stringValue(author.handle) ||
       stringValue(author.username) ||
       stringValue(author.screen_name)
@@ -1937,6 +1947,8 @@ function normalizeElythActor(item, path) {
     stringValue(item.userId) ||
     stringValue(item.aituber_id) ||
     stringValue(item.aituberId) ||
+    stringValue(item['投稿者ID']) ||
+    stringValue(item['AITuberID']) ||
     stringValue(author.id) ||
     stringValue(author.user_id) ||
     handle;
@@ -1945,13 +1957,18 @@ function normalizeElythActor(item, path) {
     stringValue(item.postId) ||
     stringValue(item.id) ||
     stringValue(item.notification_post_id) ||
-    stringValue(item.reply_to_id);
+    stringValue(item.reply_to_id) ||
+    stringValue(item['投稿ID']) ||
+    stringValue(item['返信先']) ||
+    stringValue(item['返信先ID']);
   const displayName =
     stringValue(item.author_name) ||
     stringValue(item.authorName) ||
     stringValue(item.display_name) ||
     stringValue(item.displayName) ||
     stringValue(item.name) ||
+    stringValue(item['表示名']) ||
+    parsedJapaneseAuthor.displayName ||
     stringValue(author.display_name) ||
     stringValue(author.displayName) ||
     stringValue(author.name) ||
@@ -1961,19 +1978,27 @@ function normalizeElythActor(item, path) {
     stringValue(item.body) ||
     stringValue(item.text) ||
     stringValue(item.message) ||
-    stringValue(item.summary);
-  const sourceType = path.some((part) => /notification/i.test(part)) ? 'notification' : 'timeline';
+    stringValue(item.summary) ||
+    stringValue(item['内容']) ||
+    stringValue(item['本文']);
+  const sourceType = path.some((part) => /notification|通知/i.test(part)) ? 'notification' : 'timeline';
   const authorType =
     stringValue(item.author_type) ||
     stringValue(item.authorType) ||
     stringValue(item.user_type) ||
+    stringValue(item['投稿者種別']) ||
+    stringValue(item['種別']) ||
     stringValue(author.type) ||
     stringValue(author.kind);
   const isHuman =
     item.is_human === true ||
     author.is_human === true ||
-    /human|person/i.test(authorType);
-  const isMine = item.is_mine === true || item.mine === true || item.owned_by_me === true;
+    /human|person|人間/i.test(authorType);
+  const isMine =
+    item.is_mine === true ||
+    item.mine === true ||
+    item.owned_by_me === true ||
+    path.some((part) => /myPosts|自分の投稿|自分/i.test(part));
   if (!postId || (!handle && !platformUserId)) return null;
   return {
     platform_user_id: platformUserId,
@@ -2119,6 +2144,14 @@ function normalizeCandidateList(input) {
   return Array.isArray(input)
     ? input.filter((item) => item && typeof item === 'object' && !Array.isArray(item))
     : [];
+}
+
+function parseElythJapaneseAuthor(value) {
+  const text = (stringValue(value) || '').trim();
+  if (!text) return { handle: '', displayName: '' };
+  const handle = text.match(/@([A-Za-z0-9_][A-Za-z0-9_.-]*)/u)?.[1] ?? '';
+  const displayName = text.match(/\(([^)]+)\)\s*$/u)?.[1] ?? text.replace(/@([A-Za-z0-9_][A-Za-z0-9_.-]*)/u, '').trim();
+  return { handle, displayName };
 }
 
 function normalizeHandle(value) {
