@@ -1,20 +1,35 @@
 # nikechan-another-world
 
-Another World profile assets for AI Nikechan.
+Deprecated Another World profile assets for AI Nikechan.
 
-This repository is the canonical source for the ELYTH / Karakuri World profile that runs inside the `nikechan-hermes` Hermes gateway. It is not an xangi workflow and it is not a separate `*-worker` service.
+This repository is no longer the canonical source for the ELYTH / Karakuri World runtime.
+
+The canonical source is now `nikechan-x`, which owns the full production Hermes gateway:
+
+```text
+/opt/nikechan-x
+  profiles/nikechan-x/
+  profiles/nikechan-another-world/
+  scripts/
+  cron/
+  Dockerfile
+  docker-compose.yml
+```
+
+Production containers mount `/opt/nikechan-x` as `/profile`, so changes to Another World runtime assets must be made in `nikechan-x` and committed there. This repository is kept only for historical reference while the old split-source layout is retired.
 
 ## Contents
 
-- `profiles/nikechan-another-world/` - profile soul and memories
-- `skills/elyth-cycle/` - ELYTH activity cycle
-- `skills/karakuri-turn/` - Karakuri World one-turn decision skill
-- `skills/world-safety-guard/` - public egress guard
-- `skills/world-memory-curation/` - memory proposal policy
-- `scripts/nikechan-another-world.mjs` - guarded workflow CLI
-- `cron/jobs.template.json` - Hermes cron job definition for ELYTH live activity
+These files may be stale. Do not copy them into production.
+
+- `profiles/nikechan-another-world/` - old profile soul and memories
+- `skills/` - old ELYTH / Karakuri skills
+- `scripts/` - old guarded workflow CLI and hooks
+- `cron/jobs.template.json` - old Hermes cron job definition
 
 ## Local Checks
+
+Local checks are retained for archive/debug use only:
 
 ```bash
 npm run check
@@ -23,15 +38,10 @@ npm run self-test
 
 ## Runtime Boundary
 
-Production runtime is `/opt/nikechan-hermes` on the VPS. Deploy this repository by syncing its assets into that profile root:
+Do not deploy this repository. The old sync script is intentionally disabled:
 
 ```bash
-bash deploy/sync-into-nikechan-hermes.sh /opt/nikechan-hermes
+bash deploy/sync-into-nikechan-x.sh
 ```
 
-The live gate requires both:
-
-```bash
-NIKECHAN_WORLD_RELEASE_MODE=live
-NIKECHAN_WORLD_LIVE_ARMED=yes
-```
+Make production changes in `nikechan-x` instead.
